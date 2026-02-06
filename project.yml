@@ -1,0 +1,47 @@
+name: CompassWalk
+options:
+  bundleIdPrefix: com.compasswalk
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+
+packages:
+  Domain:
+    path: Packages/Domain
+  Infra:
+    path: Packages/Infra
+  UseCase:
+    path: Packages/UseCase
+
+targets:
+  CompassWalk:
+    type: application
+    platform: iOS
+    sources:
+      - path: AppTarget
+    dependencies:
+      - package: Domain
+      - package: Infra
+      - package: UseCase
+    info:
+      path: AppTarget/Info.plist
+      properties:
+        CFBundleDisplayName: CompassWalk
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations: {}
+        UISupportedInterfaceOrientations~iphone:
+          - UIInterfaceOrientationPortrait
+        UIBackgroundModes:
+          - location
+          - remote-notification
+        NSLocationWhenInUseUsageDescription: "散歩ナビゲーションのために現在地を使用します。"
+        NSLocationAlwaysAndWhenInUseUsageDescription: "バックグラウンドでも方角案内を続けるために位置情報を常に使用します。"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.compasswalk.app
+        SWIFT_VERSION: "6.0"
