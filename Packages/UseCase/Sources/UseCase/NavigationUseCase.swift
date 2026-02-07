@@ -3,19 +3,44 @@ import Domain
 
 public final class NavigationUseCase: Sendable {
     private let locationRepository: any LocationRepository
+    private let notificationService: any NotificationService
+    private let destinationStore: any DestinationStore
 
-    public init(locationRepository: any LocationRepository) {
+    public init(
+        locationRepository: any LocationRepository,
+        notificationService: any NotificationService,
+        destinationStore: any DestinationStore
+    ) {
         self.locationRepository = locationRepository
+        self.notificationService = notificationService
+        self.destinationStore = destinationStore
+    }
+
+    public func saveDestination(_ destination: Destination) {
+        destinationStore.save(destination)
+    }
+
+    public func loadSavedDestination() -> Destination? {
+        destinationStore.load()
+    }
+
+    public func clearSavedDestination() {
+        destinationStore.clear()
     }
 
     /// 目的地に対するナビゲーション情報をリアルタイムに計算し、AsyncStream で返す。
     /// ストリーム開始時に位置情報の取得を開始し、ストリーム終了時に停止する。
+    /// 目的地まで20m以内に近づいた際、到着通知を1回送信する。
     public func observe(destination: Destination) -> AsyncStream<NavigationStatus> {
         let repo = locationRepository
+        let notification = notificationService
+        let store = destinationStore
         repo.startUpdating()
 
         return AsyncStream { continuation in
             let task = Task {
+                var hasNotifiedArrival = false
+
                 for await data in repo.observeLocationData() {
                     let distance = Self.calculateDistance(
                         from: data.coordinate,
@@ -25,6 +50,14 @@ public final class NavigationUseCase: Sendable {
                         from: data.coordinate,
                         to: destination.coordinate
                     )
+
+                    if distance < 20, !hasNotifiedArrival {
+                        hasNotifiedArrival = true
+                        store.clear()
+                        await notification.sendArrivalNotification(
+                            destinationName: destination.name
+                        )
+                    }
 
                     let status = NavigationStatus(
                         distance: distance,

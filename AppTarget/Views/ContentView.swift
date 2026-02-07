@@ -3,14 +3,28 @@ import Domain
 
 struct ContentView: View {
     @Environment(DependencyContainer.self) private var container
-    @State private var navigationPath = NavigationPath()
+    @State private var homeViewModel: HomeViewModel?
+    @State private var showMap = false
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            MapContainerView(navigationPath: $navigationPath)
-                .navigationDestination(for: Destination.self) { destination in
-                    HomeView(viewModel: container.makeHomeViewModel(destination: destination))
+        NavigationStack {
+            Group {
+                if let homeViewModel {
+                    HomeView(viewModel: homeViewModel, showMap: $showMap)
                 }
+            }
+            .navigationDestination(isPresented: $showMap) {
+                MapContainerView { destination in
+                    homeViewModel?.setDestination(destination)
+                }
+            }
+        }
+        .onAppear {
+            if homeViewModel == nil {
+                let vm = container.makeHomeViewModel()
+                vm.checkSavedDestination()
+                homeViewModel = vm
+            }
         }
     }
 }

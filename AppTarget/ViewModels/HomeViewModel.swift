@@ -1,29 +1,21 @@
 import Foundation
 import Domain
 import UseCase
-import Infra
 
 @Observable
 @MainActor
 final class HomeViewModel {
     private(set) var navigationStatus: NavigationStatus?
     private(set) var isNavigating = false
-
-    let destination: Destination
+    private(set) var destination: Destination?
+    var showResumeAlert = false
 
     private let navigationUseCase: NavigationUseCase
-    private let notificationManager: LocalNotificationManager
     private var navigationTask: Task<Void, Never>?
-    private var hasNotifiedArrival = false
+    private(set) var pendingDestination: Destination?
 
-    init(
-        destination: Destination,
-        navigationUseCase: NavigationUseCase,
-        notificationManager: LocalNotificationManager
-    ) {
-        self.destination = destination
+    init(navigationUseCase: NavigationUseCase) {
         self.navigationUseCase = navigationUseCase
-        self.notificationManager = notificationManager
     }
 
     var arrowRotation: Double {
@@ -38,21 +30,38 @@ final class HomeViewModel {
         return String(format: "%.0fm", status.distance)
     }
 
+    func checkSavedDestination() {
+        guard let saved = navigationUseCase.loadSavedDestination() else { return }
+        pendingDestination = saved
+        showResumeAlert = true
+    }
+
+    func resumeNavigation() {
+        guard let pending = pendingDestination else { return }
+        pendingDestination = nil
+        destination = pending
+        startNavigation()
+    }
+
+    func declineResume() {
+        pendingDestination = nil
+        navigationUseCase.clearSavedDestination()
+    }
+
+    func setDestination(_ destination: Destination) {
+        stopNavigation()
+        self.destination = destination
+        navigationUseCase.saveDestination(destination)
+        startNavigation()
+    }
+
     func startNavigation() {
-        guard !isNavigating else { return }
+        guard let destination, !isNavigating else { return }
         isNavigating = true
-        hasNotifiedArrival = false
 
         navigationTask = Task {
             for await status in navigationUseCase.observe(destination: destination) {
                 self.navigationStatus = status
-
-                if status.distance < 20, !hasNotifiedArrival {
-                    hasNotifiedArrival = true
-                    await notificationManager.sendArrivalNotification(
-                        destinationName: destination.name
-                    )
-                }
             }
         }
     }
@@ -61,5 +70,6 @@ final class HomeViewModel {
         navigationTask?.cancel()
         navigationTask = nil
         isNavigating = false
+        navigationStatus = nil
     }
 }

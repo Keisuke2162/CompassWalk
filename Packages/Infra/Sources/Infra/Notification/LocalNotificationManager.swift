@@ -1,7 +1,8 @@
 import Foundation
 import UserNotifications
+import Domain
 
-public final class LocalNotificationManager: Sendable {
+public final class LocalNotificationManager: NotificationService, Sendable {
 
     public init() {}
 

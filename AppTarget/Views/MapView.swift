@@ -6,8 +6,9 @@ import Domain
 
 struct MapContainerView: View {
     @Environment(DependencyContainer.self) private var container
+    @Environment(\.dismiss) private var dismiss
     @State private var viewModel = MapViewModel()
-    @Binding var navigationPath: NavigationPath
+    let onDestinationSelected: (Destination) -> Void
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -16,8 +17,8 @@ struct MapContainerView: View {
 
             if let destination = viewModel.selectedDestination {
                 DestinationCard(destination: destination) {
-                    navigationPath.append(destination)
-                    viewModel.clearSelection()
+                    onDestinationSelected(destination)
+                    dismiss()
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .padding()
@@ -72,7 +73,7 @@ struct MapViewRepresentable: UIViewRepresentable {
         mapView.showsUserLocation = true
         mapView.selectableMapFeatures = [.pointsOfInterest]
 
-        // 東京周辺を初期表示
+        // 現在位置が取得できない場合のフォールバック（東京駅付近）
         let tokyoRegion = MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
             latitudinalMeters: 2000,
@@ -80,10 +81,17 @@ struct MapViewRepresentable: UIViewRepresentable {
         )
         mapView.setRegion(tokyoRegion, animated: false)
 
+        // 現在位置が取得でき次第、そこへ移動する
+        mapView.userTrackingMode = .follow
+
         return mapView
     }
 
     func updateUIView(_ uiView: MKMapView, context: Context) {}
+
+    static func dismantleUIView(_ uiView: MKMapView, coordinator: Coordinator) {
+        uiView.userTrackingMode = .none
+    }
 
     // MARK: - Coordinator
 

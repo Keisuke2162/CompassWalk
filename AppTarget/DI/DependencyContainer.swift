@@ -8,20 +8,20 @@ import UseCase
 final class DependencyContainer {
     let locationRepository: any LocationRepository
     let navigationUseCase: NavigationUseCase
-    let notificationManager: LocalNotificationManager
 
     init() {
         let repo = LocationRepositoryImpl()
+        let notificationManager = LocalNotificationManager()
+        let destinationStore = UserDefaultsDestinationStore()
         self.locationRepository = repo
-        self.navigationUseCase = NavigationUseCase(locationRepository: repo)
-        self.notificationManager = LocalNotificationManager()
+        self.navigationUseCase = NavigationUseCase(
+            locationRepository: repo,
+            notificationService: notificationManager,
+            destinationStore: destinationStore
+        )
     }
 
-    func makeHomeViewModel(destination: Destination) -> HomeViewModel {
-        HomeViewModel(
-            destination: destination,
-            navigationUseCase: navigationUseCase,
-            notificationManager: notificationManager
-        )
+    func makeHomeViewModel() -> HomeViewModel {
+        HomeViewModel(navigationUseCase: navigationUseCase)
     }
 }

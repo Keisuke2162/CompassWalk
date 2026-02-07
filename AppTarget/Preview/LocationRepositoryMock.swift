@@ -1,7 +1,17 @@
 import Foundation
 import Domain
-import UseCase
-import Infra
+
+/// Preview 用の通知モック。何もしない。
+struct MockNotificationService: NotificationService {
+    func sendArrivalNotification(destinationName: String) async {}
+}
+
+/// Preview 用のストアモック。保存しない。
+struct MockDestinationStore: DestinationStore {
+    func save(_ destination: Destination) {}
+    func load() -> Destination? { nil }
+    func clear() {}
+}
 
 /// Preview 用のモックリポジトリ。
 /// 目的地（東京タワー）に向かって少しずつ近づきながら、ヘディングが回転する様子をシミュレートする。
