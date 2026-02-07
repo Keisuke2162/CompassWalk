@@ -5,6 +5,7 @@ import UseCase
 struct HomeView: View {
     @State var viewModel: HomeViewModel
     @Binding var showMap: Bool
+    @State private var showStopAlert = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -20,6 +21,16 @@ struct HomeView: View {
 
                 Spacer()
 
+                Button {
+                    showStopAlert = true
+                } label: {
+                    Text("終了")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 160, height: 44)
+                        .background(.red, in: RoundedRectangle(cornerRadius: 12))
+                }
+
                 Text("残り \(viewModel.distanceText)")
                     .font(.system(size: 36, weight: .medium, design: .rounded))
                     .monospacedDigit()
@@ -30,13 +41,19 @@ struct HomeView: View {
             } else {
                 Spacer()
 
-                Image(systemName: "location.circle")
-                    .font(.system(size: 80))
-                    .foregroundStyle(.secondary)
+                Button {
+                    showMap = true
+                } label: {
+                    VStack(spacing: 12) {
+                        Image(systemName: "location.circle")
+                            .font(.system(size: 80))
+                            .foregroundStyle(.secondary)
 
-                Text("目的地を選択してください")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
+                        Text("目的地を選択してください")
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
                 Spacer()
             }
@@ -54,18 +71,11 @@ struct HomeView: View {
                 }
             }
         }
-        .overlay(alignment: .bottomTrailing) {
-            Button {
-                showMap = true
-            } label: {
-                Image(systemName: "map.fill")
-                    .font(.title2)
-                    .foregroundStyle(.white)
-                    .frame(width: 56, height: 56)
-                    .background(.blue, in: Circle())
-                    .shadow(radius: 4, y: 2)
+        .alert("案内を終了しますか？", isPresented: $showStopAlert) {
+            Button("終了する", role: .destructive) {
+                viewModel.stopAndClear()
             }
-            .padding(24)
+            Button("キャンセル", role: .cancel) {}
         }
         .alert("案内を再開しますか？", isPresented: $viewModel.showResumeAlert) {
             Button("再開する") {

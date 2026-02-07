@@ -66,6 +66,12 @@ final class HomeViewModel {
         }
     }
 
+    func stopAndClear() {
+        stopNavigation()
+        destination = nil
+        navigationUseCase.clearSavedDestination()
+    }
+
     func stopNavigation() {
         navigationTask?.cancel()
         navigationTask = nil
